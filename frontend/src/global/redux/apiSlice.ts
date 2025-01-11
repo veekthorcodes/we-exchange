@@ -4,6 +4,7 @@ import { RootState } from "./store";
 import { clearAuthState } from "./slices/authSlice";
 import { LoginResponse } from "../../screens/login/@types";
 import { LoginFormValues } from "../../screens/login/Page";
+import { Transaction } from "../../screens/dashboard/@types";
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
 	args,
@@ -42,7 +43,13 @@ export const apiSlice = createApi({
 				body: data
 			})
 		}),
+		getTransactions: build.query<Transaction[], void>({
+			query: () => ({
+				method: 'GET',
+				url: '/user/transactions'
+			}),
+		})
 	})
 })
 
-export const { useLoginMutation } = apiSlice 
+export const { useLoginMutation, useGetTransactionsQuery } = apiSlice 
