@@ -1,9 +1,15 @@
+import { Route, Routes } from "react-router"
+import Layout from "./global/components/Layout"
+import LoginPage from "./screens/login/Page"
+
 function App() {
 
   return (
-    <>
-      <h1>We Exchange</h1>
-    </>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<LoginPage />} />
+      </Route>
+    </Routes>
   )
 }
 
