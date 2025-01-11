@@ -22,7 +22,7 @@ export class AppService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     await this.createDefaultUser();
@@ -129,5 +129,12 @@ export class AppService {
       fromCurrency: convertDto.fromCurrency,
       toCurrency: convertDto.toCurrency,
     };
+  }
+
+  async getUserTransactions(user: User) {
+    return this.transactionRepository.find({
+      where: { user: { id: user.id } },
+      order: { timestamp: 'DESC' },
+    });
   }
 }

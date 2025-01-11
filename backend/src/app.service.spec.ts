@@ -193,4 +193,74 @@ describe('AppService', () => {
       );
     });
   });
+
+  describe('getCurrentRates', () => {
+    it('should fetch exchange rates successfully', async () => {
+      const rates = { rates: { USD: 1, EUR: 0.9 } };
+
+      jest.spyOn(axios, 'get').mockResolvedValue({ data: rates });
+
+      const result = await appService.getCurrentRates();
+
+      expect(result).toEqual(rates);
+      expect(axios.get).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `https://open.exchangerate-api.com/v6/latest?app_id=${process.env.EXCHANGE_APP_ID}`,
+        ),
+      );
+    });
+
+    it('should throw HttpException when exchange rate API fails', async () => {
+      jest
+        .spyOn(axios, 'get')
+        .mockRejectedValue(new Error('Failed to fetch rates'));
+
+      await expect(appService.getCurrentRates()).rejects.toThrowError(
+        HttpException,
+      );
+    });
+  });
+
+  describe('getUserTransactions', () => {
+    it('should return a list of user transactions', async () => {
+      const user: User = {
+        id: 1,
+        username: 'testuser',
+        password: 'testpass',
+        transactions: [],
+      };
+      const transactions = [
+        {
+          id: 1,
+          fromCurrency: 'USD',
+          toCurrency: 'EUR',
+          amount: 100,
+          convertedAmount: 90,
+          rate: 0.9,
+          timestamp: new Date(),
+          user: user,
+        },
+        {
+          id: 2,
+          fromCurrency: 'USD',
+          toCurrency: 'GBP',
+          amount: 50,
+          convertedAmount: 40,
+          rate: 0.8,
+          timestamp: new Date(),
+          user: user,
+        },
+      ];
+
+      jest.spyOn(transactionRepository, 'find').mockResolvedValue(transactions);
+
+      const result = await appService.getUserTransactions(user);
+
+      expect(result).toEqual(transactions);
+      expect(transactionRepository.find).toHaveBeenCalledWith({
+        where: { user: { id: user.id } },
+        order: { timestamp: 'DESC' },
+      });
+    });
+  });
 });

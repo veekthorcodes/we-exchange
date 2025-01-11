@@ -15,7 +15,7 @@ import { ConvertDto } from './dtos/exchange.dto';
 @Controller()
 @UseGuards(ThrottlerGuard)
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  constructor(private readonly appService: AppService) {}
 
   @Post('auth/login')
   async login(@Body() loginDto: LoginDto) {
@@ -31,5 +31,11 @@ export class AppController {
   @UseGuards(JwtAuthGuard)
   async convert(@Body() convertDto: ConvertDto, @Request() req) {
     return this.appService.convert(convertDto, req.user);
+  }
+
+  @Get('user/transactions')
+  @UseGuards(JwtAuthGuard)
+  async getTransactions(@Request() req) {
+    return this.appService.getUserTransactions(req.user);
   }
 }

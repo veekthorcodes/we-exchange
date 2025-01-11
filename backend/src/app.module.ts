@@ -39,4 +39,4 @@ import { JwtStrategy } from './common/strategies/jwt.strategy';
   controllers: [AppController],
   providers: [AppService, JwtStrategy],
 })
-export class AppModule { }
+export class AppModule {}
