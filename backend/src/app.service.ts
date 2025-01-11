@@ -1,16 +1,26 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto, LoginResponse } from './dtos/auth.dto';
+import axios from 'axios';
+import { Transaction } from './entities/transaction.entity';
+import { ConvertDto } from './dtos/exchange.dto';
 
 @Injectable()
 export class AppService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Transaction)
+    private readonly transactionRepository: Repository<Transaction>,
     private readonly jwtService: JwtService,
   ) { }
 
@@ -63,6 +73,61 @@ export class AppService {
     return {
       username: user.username,
       accessToken: this.jwtService.sign(payload),
+    };
+  }
+
+  async getCurrentRates() {
+    const supportedCurrencies = 'GHS,NGN,GBP,EUR';
+    try {
+      const response = await axios.get(
+        `https://open.exchangerate-api.com/v6/latest?app_id=${process.env.EXCHANGE_APP_ID}&symbols=${supportedCurrencies}`,
+      );
+      return response.data;
+    } catch (e) {
+      throw new HttpException(
+        `Failed to fetch exchange rates:, ${e}`,
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+  }
+
+  async convert(convertDto: ConvertDto, user: User) {
+    const rates = await this.getCurrentRates();
+
+    const fromRate = rates.rates[convertDto.fromCurrency];
+    const toRate = rates.rates[convertDto.toCurrency];
+
+    if (!fromRate || !toRate) {
+      throw new HttpException('Invalid currency', HttpStatus.BAD_REQUEST);
+    }
+
+    const rate = toRate / fromRate;
+    const convertedAmount = convertDto.amount * rate;
+
+    const dbUser = await this.userRepository.findOne({
+      where: { id: user.id },
+    });
+    if (!dbUser) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const transaction = this.transactionRepository.create({
+      fromCurrency: convertDto.fromCurrency,
+      toCurrency: convertDto.toCurrency,
+      amount: convertDto.amount,
+      convertedAmount,
+      rate,
+      user: dbUser,
+    });
+
+    await this.transactionRepository.save(transaction);
+
+    return {
+      amount: convertDto.amount,
+      convertedAmount,
+      rate,
+      fromCurrency: convertDto.fromCurrency,
+      toCurrency: convertDto.toCurrency,
     };
   }
 }
