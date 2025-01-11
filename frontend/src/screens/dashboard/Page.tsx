@@ -4,6 +4,7 @@ import { useNavigate } from "react-router"
 import { clearAuthState, selectAuthState } from "../../global/redux/slices/authSlice"
 import TransactionHistory from "./components/TransactionHistory"
 import { FaUserAlt } from "react-icons/fa";
+import Conversion from "./components/Conversion"
 
 const DashboardPage = () => {
 	const { accessToken, username } = useSelector(selectAuthState)
@@ -29,6 +30,7 @@ const DashboardPage = () => {
 
 			<div>
 				<TransactionHistory />
+				<Conversion />
 			</div>
 		</div >
 	)

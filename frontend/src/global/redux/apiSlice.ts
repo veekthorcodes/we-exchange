@@ -4,7 +4,7 @@ import { RootState } from "./store";
 import { clearAuthState } from "./slices/authSlice";
 import { LoginResponse } from "../../screens/login/@types";
 import { LoginFormValues } from "../../screens/login/Page";
-import { Transaction } from "../../screens/dashboard/@types";
+import { ConversionRequest, ConversionResponse, ExchangeRateResponse, Transaction } from "../../screens/dashboard/@types";
 
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
 	args,
@@ -35,6 +35,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 export const apiSlice = createApi({
 	reducerPath: 'api',
 	baseQuery: baseQueryWithReauth,
+	tagTypes: ["Transactions"],
 	endpoints: (build) => ({
 		login: build.mutation<LoginResponse, LoginFormValues>({
 			query: (data) => ({
@@ -48,8 +49,23 @@ export const apiSlice = createApi({
 				method: 'GET',
 				url: '/user/transactions'
 			}),
-		})
+			providesTags: ["Transactions"]
+		}),
+		getExchangeRates: build.query<ExchangeRateResponse, void>({
+			query: () => ({
+				method: 'GET',
+				url: '/exchange-rates'
+			})
+		}),
+		convert: build.mutation<ConversionResponse, ConversionRequest>({
+			query: (data) => ({
+				method: 'POST',
+				url: '/convert',
+				body: data
+			}),
+			invalidatesTags: ['Transactions']
+		}),
 	})
 })
 
-export const { useLoginMutation, useGetTransactionsQuery } = apiSlice 
+export const { useLoginMutation, useGetTransactionsQuery, useGetExchangeRatesQuery, useConvertMutation } = apiSlice 

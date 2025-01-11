@@ -23,3 +23,6 @@ export const formatValue = (value: unknown, key: keyof Transaction): string => {
 	}
 	return String(value);
 };
+
+export const fromCurrencies = ["USD"]
+export const toCurrencies = ["GHS", "NGN", "GBP", "EUR"]
