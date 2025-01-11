@@ -4,8 +4,9 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entites/user.entity';
-import { Transaction } from './entites/transaction.entity';
+import { User } from './entities/user.entity';
+import { Transaction } from './entities/transaction.entity';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -29,6 +30,10 @@ import { Transaction } from './entites/transaction.entity';
       synchronize: process.env.DB_SYNC === 'true',
     }),
     TypeOrmModule.forFeature([User, Transaction]),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '1h' },
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
