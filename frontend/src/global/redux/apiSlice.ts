@@ -42,7 +42,8 @@ export const apiSlice = createApi({
 				method: 'POST',
 				url: '/auth/login',
 				body: data
-			})
+			}),
+			invalidatesTags: ['Transactions']
 		}),
 		getTransactions: build.query<Transaction[], void>({
 			query: () => ({

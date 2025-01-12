@@ -8,8 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { LoginDto, LoginResponse } from './dtos/auth.dto';
+import * as bcrypt from 'bcryptjs';
+import { LoginDto, LoginResponse, RequestUser } from './dtos/auth.dto';
 import axios from 'axios';
 import { Transaction } from './entities/transaction.entity';
 import { ConvertDto } from './dtos/exchange.dto';
@@ -22,38 +22,50 @@ export class AppService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
-    await this.createDefaultUser();
+    await this.createDefaultUsers();
   }
 
-  private async createDefaultUser() {
-    const username = process.env.DEFAULT_USER || 'defaultuser';
-    const password = process.env.DEFAULT_PASSWORD || 'defaultpassword';
+  private async createDefaultUsers() {
+    const users = [
+      {
+        username: 'user 1',
+        password: 'password1'
+      },
+      {
+        username: 'user 2',
+        password: 'password2'
+      }
+    ]
 
     try {
-      const existingUser = await this.userRepository.findOne({
-        where: { username: username },
+      const existingUsers = await this.userRepository.find({
+        where: users.map(user => ({ username: user.username }))
       });
 
-      if (!existingUser) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const defaultUser = this.userRepository.create({
-          username,
-          password: hashedPassword,
+      const existingUsernames = existingUsers.map(user => user.username);
+
+      const newUserPromises = users.filter(user => !existingUsernames.includes(user.username))
+        .map(async (user) => {
+          const hashedPassword = await bcrypt.hash(user.password, 10);
+          const newUser = this.userRepository.create({
+            username: user.username,
+            password: hashedPassword
+          });
+
+          await this.userRepository.save(newUser);
+          console.log(`User ${user.username} created successfully`);
         });
 
-        await this.userRepository.save(defaultUser);
-        console.log('Default user created successfully');
-      } else {
-        console.log(
-          'Login with default user: ',
-          username,
-          ' and passowrd: ',
-          password,
-        );
-      }
+      await Promise.all(newUserPromises);
+
+      users.forEach(user => {
+        if (existingUsernames.includes(user.username)) {
+          console.log(`User ${user.username} already exists`);
+        }
+      });
     } catch (error) {
       console.error('Error creating default user:', error);
     }
@@ -91,7 +103,7 @@ export class AppService {
     }
   }
 
-  async convert(convertDto: ConvertDto, user: User) {
+  async convert(convertDto: ConvertDto, user: RequestUser) {
     const rates = await this.getCurrentRates();
 
     const fromRate = rates.rates[convertDto.fromCurrency];
@@ -105,7 +117,7 @@ export class AppService {
     const convertedAmount = convertDto.amount * rate;
 
     const dbUser = await this.userRepository.findOne({
-      where: { id: user.id },
+      where: { id: user.userId },
     });
     if (!dbUser) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -131,9 +143,9 @@ export class AppService {
     };
   }
 
-  async getUserTransactions(user: User) {
+  async getUserTransactions(user: RequestUser) {
     return this.transactionRepository.find({
-      where: { user: { id: user.id } },
+      where: { user: { id: user.userId } },
       order: { timestamp: 'DESC' },
     });
   }

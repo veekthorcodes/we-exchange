@@ -14,3 +14,8 @@ export class LoginResponse {
   username: string;
   accessToken: string;
 }
+
+export class RequestUser {
+  userId: number;
+  username: string;
+}
