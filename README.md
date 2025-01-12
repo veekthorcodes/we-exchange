@@ -17,6 +17,9 @@ Follow these steps to set up and run the project locally.
 
 2. Install dependencies:
    ```bash
+   cd we-exchange
+   ```
+   ```bash
    make install
    ```
 
@@ -46,4 +49,14 @@ Follow these steps to set up and run the project locally.
    - Test backend endpoints with postman:
      ```bash
      http://localhost:5050
+     ```
+   - Login with any of the credentials below:
+
+     ```bash
+     username: user 1
+     password: password1
+     ```
+     ```bash
+     username: user 2
+     password: password2
      ```
