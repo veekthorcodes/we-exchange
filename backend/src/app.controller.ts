@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { LoginDto, RequestUser } from './dtos/auth.dto';
+import { LoginDto } from './dtos/auth.dto';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ConvertDto } from './dtos/exchange.dto';
 import { RequestWithUser } from './common/@types';
@@ -16,7 +16,7 @@ import { RequestWithUser } from './common/@types';
 @Controller()
 @UseGuards(ThrottlerGuard)
 export class AppController {
-  constructor(private readonly appService: AppService) { }
+  constructor(private readonly appService: AppService) {}
 
   @Post('auth/login')
   async login(@Body() loginDto: LoginDto) {
@@ -30,14 +30,16 @@ export class AppController {
 
   @Post('convert')
   @UseGuards(JwtAuthGuard)
-  async convert(@Body() convertDto: ConvertDto, @Request() req: RequestWithUser) {
+  async convert(
+    @Body() convertDto: ConvertDto,
+    @Request() req: RequestWithUser,
+  ) {
     return this.appService.convert(convertDto, req.user);
   }
 
   @Get('user/transactions')
   @UseGuards(JwtAuthGuard)
   async getTransactions(@Request() req: RequestWithUser) {
-    console.log
     return this.appService.getUserTransactions(req.user);
   }
 }

@@ -22,7 +22,7 @@ export class AppService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     await this.createDefaultUsers();
@@ -32,27 +32,28 @@ export class AppService {
     const users = [
       {
         username: 'user 1',
-        password: 'password1'
+        password: 'password1',
       },
       {
         username: 'user 2',
-        password: 'password2'
-      }
-    ]
+        password: 'password2',
+      },
+    ];
 
     try {
       const existingUsers = await this.userRepository.find({
-        where: users.map(user => ({ username: user.username }))
+        where: users.map((user) => ({ username: user.username })),
       });
 
-      const existingUsernames = existingUsers.map(user => user.username);
+      const existingUsernames = existingUsers.map((user) => user.username);
 
-      const newUserPromises = users.filter(user => !existingUsernames.includes(user.username))
+      const newUserPromises = users
+        .filter((user) => !existingUsernames.includes(user.username))
         .map(async (user) => {
           const hashedPassword = await bcrypt.hash(user.password, 10);
           const newUser = this.userRepository.create({
             username: user.username,
-            password: hashedPassword
+            password: hashedPassword,
           });
 
           await this.userRepository.save(newUser);
@@ -61,7 +62,7 @@ export class AppService {
 
       await Promise.all(newUserPromises);
 
-      users.forEach(user => {
+      users.forEach((user) => {
         if (existingUsernames.includes(user.username)) {
           console.log(`User ${user.username} already exists`);
         }

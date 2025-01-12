@@ -3,14 +3,15 @@ import { AppService } from './app.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { HttpException, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import axios from 'axios';
 import { Transaction } from './entities/transaction.entity';
+import { RequestUser } from './dtos/auth.dto';
 
 jest.mock('axios');
-jest.mock('bcrypt');
+jest.mock('bcryptjs');
 jest.mock('@nestjs/jwt');
 
 describe('AppService', () => {
@@ -105,6 +106,10 @@ describe('AppService', () => {
         toCurrency: 'EUR',
         amount: 100,
       };
+      const requestUser: RequestUser = {
+        userId: 1,
+        username: 'testuser',
+      };
       const user: User = {
         id: 1,
         username: 'testuser',
@@ -134,7 +139,7 @@ describe('AppService', () => {
         .spyOn(transactionRepository, 'save')
         .mockResolvedValue(mockTransaction);
 
-      const result = await appService.convert(convertDto, user);
+      const result = await appService.convert(convertDto, requestUser);
 
       expect(result.convertedAmount).toBe(90);
       expect(transactionRepository.create).toHaveBeenCalledWith(
@@ -155,20 +160,18 @@ describe('AppService', () => {
         toCurrency: 'XYZ',
         amount: 100,
       };
-      const user: User = {
-        id: 1,
+      const requestUser: RequestUser = {
+        userId: 1,
         username: 'testuser',
-        password: 'testpass',
-        transactions: [],
       };
 
       jest
         .spyOn(axios, 'get')
         .mockResolvedValue({ data: { rates: { USD: 1 } } });
 
-      await expect(appService.convert(convertDto, user)).rejects.toThrowError(
-        HttpException,
-      );
+      await expect(
+        appService.convert(convertDto, requestUser),
+      ).rejects.toThrowError(HttpException);
     });
 
     it('should throw HttpException when unable to fetch exchange rates', async () => {
@@ -177,20 +180,19 @@ describe('AppService', () => {
         toCurrency: 'EUR',
         amount: 100,
       };
-      const user: User = {
-        id: 1,
+
+      const requestUser: RequestUser = {
+        userId: 1,
         username: 'testuser',
-        password: 'testpass',
-        transactions: [],
       };
 
       jest
         .spyOn(axios, 'get')
         .mockRejectedValue(new Error('Failed to fetch rates'));
 
-      await expect(appService.convert(convertDto, user)).rejects.toThrowError(
-        HttpException,
-      );
+      await expect(
+        appService.convert(convertDto, requestUser),
+      ).rejects.toThrowError(HttpException);
     });
   });
 
@@ -223,12 +225,18 @@ describe('AppService', () => {
 
   describe('getUserTransactions', () => {
     it('should return a list of user transactions', async () => {
+      const requestUser: RequestUser = {
+        userId: 1,
+        username: 'testuser',
+      };
+
       const user: User = {
         id: 1,
         username: 'testuser',
         password: 'testpass',
         transactions: [],
       };
+
       const transactions = [
         {
           id: 1,
@@ -254,11 +262,11 @@ describe('AppService', () => {
 
       jest.spyOn(transactionRepository, 'find').mockResolvedValue(transactions);
 
-      const result = await appService.getUserTransactions(user);
+      const result = await appService.getUserTransactions(requestUser);
 
       expect(result).toEqual(transactions);
       expect(transactionRepository.find).toHaveBeenCalledWith({
-        where: { user: { id: user.id } },
+        where: { user: { id: requestUser.userId } },
         order: { timestamp: 'DESC' },
       });
     });
