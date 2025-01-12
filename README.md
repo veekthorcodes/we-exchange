@@ -30,10 +30,10 @@ Follow these steps to set up and run the project locally.
 4. Start the application:
    - Navigate to the root directory:
      ```bash
-     cd <project-root>
+     cd ..
      ```
    - Run Docker Compose:
      ```bash
-     docker-compose up
+     docker-compose up --build
      ```
 
